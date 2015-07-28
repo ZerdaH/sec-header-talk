@@ -4,6 +4,14 @@
 	<head>
 		<meta charset="utf-8">
 
+		<meta http-equiv="Content-Security-Policy-Report-Only" content="default-src 'none'">
+
+		<!-- <meta http-equiv="Content-Security-Policy-Report-Only" content="
+	default-src 'self';
+	script-src  'self' 'unsafe-inline';
+	style-src   'self' 'unsafe-inline'
+"> -->
+
 		<title>HTTP Security Headers</title>
 
 		<meta name="description" content="A short introduction to security headers">
@@ -35,7 +43,6 @@
 	</head>
 
 	<body>
-
 		<div class="reveal">
 
 			<!-- Any section element inside of this container is displayed as a slide -->
@@ -47,7 +54,11 @@
 						<small>Adam Hart &nbsp; :: &nbsp; Sygnul, LLC &nbsp; :: &nbsp; <a href="https://sygnul.com/">sygnul.com</a></small>
 					</p>
 						<aside class="notes">
-							Hi, my name is Adam Hart.  I work on Sygnul, which is an unreleased, end-to-end encrypted collaboration app.  I wanted to give a brief overview of some of the HTTP headers built into modern browsers that deal with security.
+						<ul>
+							<li>Name</li>
+							<li>"Unreleased, end-to-end encrypted collaboration app"</li>
+							<li>Want to give brief intro</li>
+						</ul>
 						</aside>
 				</section>
 
@@ -68,28 +79,378 @@ x-ec-custom-error: 1
 Content-Length: 1270
 					</code></pre>
 					<small>Headers from <a href="https://example.com/">example.com</a></small>
+					<aside class="notes"><ul>
+						<li>Every time BROWSER makes request</li>
+						<li>META DATA associated with the request</li>
+						<li>like cache control, content length, WHATEVER</li>
+						<li>a few for SECURITY</li>
+						<li>Unfortunately BIG topic</li>
+						<li>Blast through most of these</li>
+					</ul></aside>
+				</section>
+
+				<!-- <section>
+					<h2>Obscuring Server Information</h2>
+					<pre><code data-trim class="http">
+Server: Apache/2.2.17 (Unix) mod_ssl/2.2.23 OpenSSL/0.9.8b
+X-Powered-By: PHP/5.2.17
+					</code></pre>
+					<p>Avoid detailed server information on production sites.</p>
 					<aside class="notes">
-						Every request the browser makes has meta-data associated with it such as cache controls, content types, and any custom ones you throw in there.
+						But first, some headers NOT to include.  There's really no reason to have something like this example with such detailed information.  It just makes it easier for someone to scan your site and immediately see that it might be vulnerable because it's running some outdated software.  So, it's a good idea to remove these sorts of headers, even it doesn't actually make your site any more safe.
+					</aside>
+				</section> -->
+
+				<section>
+					<h2>Internet Explorer Specific</h2>
+
+					<pre><code data-trim class="http">
+X-Content-Type-Options: nosniff
+					</code></pre>
+
+					<small>Prevent IE from "sniffing" files types</small>
+					<br/><br/>
+
+					<pre><code data-trim class="http">
+X-XSS-Protection: 1; mode=block
+					</code></pre>
+
+					<small>Use IE's XSS protection to block suspected attack</small>
+					<!-- <small>Have IE use the latest version available instead of an older compatibility mode</small>
+					<pre><code data-trim class="http">
+X-UA-Compatible: IE=edge
+					</code></pre> -->
+					<aside class="notes">
+						<!-- Some other browsers will look at these, but they mostly apply to Internet Explorer.  For the first one, IE will sometimes look at the contents of a plain text file, and run it as javascript.  Setting "content type options" to "no sniff" will make it so IE only runs javascript that was delivered with the proper application - slash - javascript mime type.  IE also has some built in cross-site-scripting protection.  Setting XSS-Protection to 1, and the mode to block will have IE completely block the page if it suspects an cross site scripting attack.  And the third one on here is mostly only relevant to intranet sites, but you can suggest which version of internet explorer to use with UA-compatible.  Even before project spartan existed, IE used the term "edge" here to indicate that the browser should use the latest available version instead of an older compatibility mode. -->
+						<ul>
+							<li>START with internet explorer</li>
+							<li>setting CONTENT TYPE OPTIONS: no sniff</li>
+							<li>requires correct MIME TYPE</li>
+							<li>NO PLAIN TEXT to javascript</li>
+							<li>------</li>
+							<li>XSS built in</li>
+							<li>makes sure it's enabled</li>
+							<li>blocks suspected attacks</li>
+						</ul>
 					</aside>
 				</section>
 
-				<section data-markdown>
-					<script type="text/template">
-						##
+				<section>
+					<h2>Whitelist Cross Origin Resource Sharing (CORS)</h2>
 
-						More to come
+					<pre><code data-trim class="http">
+Access-Control-Allow-Origin: http://www.example.com/
+					</code></pre>
 
-						```
-						code
-						```
-					</script>
+					<p>Specify allowed sites rather than using the (*) wildcard</p>
+					<aside class="notes">
+						<ul>
+							<li>Won't go deep</li>
+							<li>if using ACCESS CONTROL ALLOW ORIGIN</li>
+							<li>If you include this and set it to an asterisk wildcard</li>
+							<li>lets any site make requests to your site</li>
+							<li>almost always want to SPECIFY SITES ALLOWED instead</li>
+							<li>WHITE LIST ALLOWED</li>
+							<li>or blacklist abusive sites</li>
+						</ul>
+					</aside>
+				</section>
+
+				<section>
+					<h2>Cross Site Adobe Plugin Policies</h2>
+					<small>or "Cross Domain Meta Policy"</small>
+
+					<pre><code data-trim class="http">
+X-Permitted-Cross-Domain-Policies: master-only
+					</code></pre>
+
+					<p>Specify policies for running pdfs or flash across origins</p>
+					<aside class="notes">
+						<ul>
+							<li>not quite as important</li>
+							<li>But LOTS of PDFs or Flash</li>
+							<li>might want this</li>
+							<li>specify which sites your flash or adobe reader plugins are allowed to request</li>
+							<li>using a manifest file</li>
+						</ul>
+					</aside>
+				</section>
+
+				<section>
+					<h2>Frame Options</h2>
+
+					<pre><code data-trim class="http">
+X-Frame-Options: deny
+					</code></pre>
+
+					<p>Prevent your site from being loaded via<br/>&lt;frame&gt; &lt;iframe&gt; or &lt;object&gt;</p>
+					<aside class="notes">
+						<ul>
+							<li>Frame options</li>
+							<li>for preventing CLICK JACKING</li>
+							<li>loads your site inside theirs</li>
+							<li>WHICH enables certain attacks</li>
+							<li>STARTS with X-dash</li>
+							<li>means it's a NON-STANDARD header</li>
+							<li>eventually be deprecated in favor of another header</li>
+						</ul>
+					</aside>
+				</section>
+
+				<section>
+					<h2>HTTP Strict Transport Security</h2>
+					<small>(HSTS) or (STS)</small>
+
+					<pre><code data-trim class="http">
+Strict-Transport-Security: max-age=10886400
+Strict-Transport-Security: max-age=10886400; includeSubDomains
+					</code></pre>
+
+					<small>Force page to run over TLS (SSL/HTTPS). Age in seconds. Optionally include subdomains.</small>
+					<aside class="notes">
+						<ul>
+							<li>GOOD ONE</li>
+							<li>Strict Transport Security</li>
+							<li>sometimes call HSTS or just STS</li>
+							<li>forces site ENCRYPTED over TLS</li>
+							<li>subsequent requests MUST USE TLS</li>
+							<li>ONLY USE if everything on your site works with HTTPS</li>
+							<li>and you can OPTIONALLY do the same thing for subdomains too</li>
+						</ul>
+					</aside>
+				</section>
+
+				<section>
+					<h2>Preload HSTS</h2>
+
+					<pre><code data-trim class="http">
+Strict-Transport-Security: max-age=10886400;
+	includeSubDomains; preload
+					</code></pre>
+
+					<small>Preload into browsers at <a href="https://hstspreload.appspot.com/">hstspreload.appspot.com</a></small><br/>
+					<img src="img/hstspreload.png" alt="HSTS Preload Site"/>
+					<aside class="notes">
+						<ul>
+							<li>Also option PRELOADING HSTS</li>
+							<li>New versions of BROWSER come Bundled - long list</li>
+							<li>now browser forwards your site to HTTPS WITHOUT a single network request</li>
+							<li>SO WHEN visit example.com</li>
+							<li>browser already interrupts</li>
+							<li>forwards you to HTTPS example.com</li>
+						</ul>
+					</aside>
+				</section>
+
+				<section>
+					<h2>Public Key Pinning</h2>
+
+					<pre><code data-trim class="http">
+Public-Key-Pins:
+	pin-sha256="n4bQgYhMfWWaL+qgxVrQFaO/TxsrC4Is0V1sFbDwCgg=";
+	pin-sha256="UNhY4JhezH9gQYqvDMWrWH9CwlcKiECVqejMrND2VFw=";
+	max-age=600
+					</code></pre>
+					<small>Set the expected TLS certificate.  Blocks the site if the certificate given isn't on this list.</small>
+					<small>SHA-256, base64 encoded SPKI fingerprint. Age in seconds. Requires at least one backup key.</small>
+					<aside class="notes">
+						<ul>
+							<li>Brand new</li>
+							<li>No best practices</li>
+							<li>Python.org only site, using 10 minute max age</li>
+							<li>BASICALLY: browser EXPECTS certain encryption keys</li>
+							<li>other keys? BLOCKED</li>
+							<li>Be EVEN MORE careful</li>
+							<li>if you revoke your keys AND your backup keys</li>
+							<li>users can't access your site</li>
+						</ul>
+					</aside>
+				</section>
+
+				<section>
+					<p>"Ok, but this all just seems like server configuration stuff"</p>
+					<aside class="notes">
+						<ul>
+							<li>maybe zoned out</li>
+							<li>backend configuration stuff</li>
+							<li>one last header</li>
+							<li>requires a lot of thought from a frontend developer</li>
+							<li>to take advantage</li>
+							<li>Primarily has to do with...</li>
+						</ul>
+					</aside>
+				</section>
+
+				<section>
+					<h2>XSS</h2>
+					<p>"Cross Site Scripting" injection vulnerability</p>
+					<pre><code data-trim class="javascript">
+userBio = getUserInfoFromServer()
+domElement.innerHTML = "&lt;p&gt;" + userBio + "&lt;/p&gt;"
+					</code></pre>
+					<small>(don't do this)</small>
+					<aside class="notes">
+						<ul>
+							<li>hopefully cringing</li>
+							<li>even if the server sanitizes</li>
+							<li>awful way to show user bio</li>
+							<li>let's say you havet his on your site</li>
+							<li>or something less obvious</li>
+							<li>can reduce the damage of it with CONTENT SECURITY POLICY</li>
+						</ul>
+					</aside>
+				</section>
+
+				<section>
+					<h2>Content Security Policy (CSP)</h2>
+
+					<pre><code data-trim class="http">
+Content-Security-Policy: default none;
+	script-src 'self' https://ajax.googleapis.com/*;
+	style-src 'self';
+	connect-src 'self';
+	img-src 'self'
+					</code></pre>
+
+					<small>Blocks inline script, inline style, eval, and requests to any site not whitelisted.</small>
+
+					<aside class="notes">
+						<ul>
+							<li>Content Security policy or CSP</li>
+							<li>All about whitelisting</li>
+							<li>You define specific behavior of your site</li>
+							<li>the browser blocks everything else</li>
+						</ul>
+					</aside>
+				</section>
+
+				<section>
+					<p>Start by seeing what your site uses</p>
+
+					<pre><code data-trim class="http">
+Content-Security-Policy-Report-Only: default-src "none"
+					</code></pre>
+					<br/>
+					<pre><code data-trim class="html">
+&lt;meta http-equiv="Content-Security-Policy-Report-Only"
+	content="default-src 'none'"&gt;
+					</code></pre>
+
+					<small>*You can also set it via HTML in the &lt;head&gt; using "&lt;meta&gt;"</small>
+					<aside class="notes">
+						<ul>
+							<li>Start with a header like this</li>
+							<li>I'm actually using this header on this very site</li>
+							<li>*OPEN CONSOLE*</li>
+							<li>At top is a report URI</li>
+							<li>Handy, it posts a JSON report for each of these violations</li>
+							<li>If you get a bunch, latest update introduced vulnerability</li>
+							<li>Or you just need to add something to your whitelist</li>
+							<li>Most are complaining about localhost</li>
+							<li>If I add DEFAULT SOURCE SELF - remove most warnings</li>
+						</ul>
+					</aside>
+				</section>
+
+				<section>
+					<h2>Script Source</h2>
+
+					<pre><code data-trim class="http">
+Content-Security-Policy:
+	script-src: 'self' 'unsafe-inline' 'unsafe-eval'
+					</code></pre>
+
+					<small>Allows scripts from our server, inline scripts, and eval() type functions.</small>
+					<aside class="notes">
+						<ul>
+							<li>SOMEWHERE IN HERE is a warning about inline scripts that I'm using on this page</li>
+							<li>*CLOSE CONSOLE*</li>
+							<li>DEFAULT SOURCE SELF won't fix this warning</li>
+							<li>have to specify unsafe inline</li>
+							<li>Same thing for EVAL</li>
+							<li>and other functions that evaluate strings to javascript</li>
+							<li>Our INNER HTML example would be unable to execute javascript injected into the USER BIO</li>
+							<li>---</li>
+							<li>STILL NEED INLINE?</li>
+							<li>use nonce generated on page load</li>
+							<li>not worth it</li>
+							<li>---</li>
+							<li>Tricky work arounds</li>
+							<li>So you still have to avoid injection vectors</li>
+							<li>but MUCH safer</li>
+							<li>---</li>
+							<li>*CLOSE CONSOLE*</li>
+						</ul>
+					</aside>
+				</section>
+
+				<section>
+
+					<h2>Other common Sources</h2>
+					<pre><code data-trim class="http">
+Content-Security-Policy:
+	style-src: 'unsafe-inline' https://ajax.googleapis.com/*;
+	img-src: data: blob:;
+	media-src: 'self' mediastream:;
+	connect-src: https://*.example.com/*
+					</code></pre>
+
+					<small>Inline style works like inline scripts.<br/>'self' is for the same domain the page was loaded from.<br/>Wildcard (*) allows anything.</small>
+					<aside class="notes">
+						<ul>
+							<li>*CLOSE CONSOLE*</li>
+							<li>Inline Styles similar</li>
+							<li>requires unsafe inline</li>
+							<li>if blocking inline javascript</li>
+							<li>inline styles won't execute javascript injections</li>
+							<li>images created clientside</li>
+							<li>DATA URL and BLOB URL</li>
+							<li>media only from our server and mediastreams</li>
+							<li>websockets and ajax only to example.com</li>
+							<li>allow any subdomains</li>
+						</ul>
+					</aside>
+				</section>
+
+				<section>
+					<h3>Full List of CSP Options</h3>
+					<pre><code data-trim class="http">
+Content-Security-Policy: default-src: 'none';
+	base-uri: *;
+	child-src: 'self';
+	connect-src: 'self' wss://example.com:7443/*;
+	font-src: 'self';
+	form-action: 'self';
+	frame-ancestors: 'none'; //replaces X-Frame-Options: deny
+	frame-src: 'self';
+	img-src: data: blob:;
+	media-src: 'self' mediastream:;
+	object-src: 'self';
+	plugin-types: application/pdf;
+	report-uri: /api/csperror/;
+	sandbox: allow-popups allow-forms;
+	script-src: 'self' 'nonce-Nc3n83cnSAd3wc3Sasdfn939hc3';
+	style-src: 'sha256-UNhY4JhezH9gQYqvDMWrWH9CwlcKiECVqejMrND2VFw='
+					</code></pre>
+					<aside class="notes">
+						<ul>
+							<li>*CLOSE CONSOLE*</li>
+							<li>Big list</li>
+							<li>Some aren't finalized</li>
+							<li>included in CSP version 2</li>
+							<li>chrome firefox already implementing</li>
+						</ul>
+					</aside>
 				</section>
 
 				<section style="text-align: left;">
 					<h1>Links</h1>
 					<ul>
 						<li>Scan your site's headers:
-							<ul><li><a href="https://securityheaders.com">securityheaders.com</a></li></ul>
+							<ul>
+								<li><a href="https://securityheaders.com">securityheaders.com</a></li>
+								<li><a href="https://httpsecurityreport.com/">httpsecurityreport.com</a></li>
+							</ul>
 						</li>
 						<li>CSP 2 Spec:
 							<ul><li><a href="http://www.w3.org/TR/CSP2/">w3.org/TR/CSP2</a></li></ul>
@@ -101,10 +462,16 @@ Content-Length: 1270
 							<ul><li><a href="https://zerdah.github.io/sec-header-talk/">zerdah.github.io/sec-header-talk</a></li></ul>
 						</li>
 					</ul>
+					<aside class="notes">
+						<ul>
+							<li>That's all the headers</li>
+							<li>Sites SCAN YOUR PAGE</li>
+							<li>offers recommendations</li>
+							<li>HOPE YOU TRY THEM</li>
+						</ul>
+					</aside>
 				</section>
-
 			</div>
-
 		</div>
 
 		<script src="lib/js/head.min.js"></script>
